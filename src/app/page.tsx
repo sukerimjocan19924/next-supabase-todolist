@@ -1,14 +1,23 @@
 'use client'
 import { useState, useEffect } from 'react'
 import { supabase, type Todo } from '@/lib/supabase'
+import { useRouter } from 'next/navigation'
 
 export default function Home() {
   const [todos, setTodos] = useState<Todo[]>([])
   const [title, setTitle] = useState('')
   const [loading, setLoading] = useState(true)
 
+  const router = useRouter()
+
   useEffect(() => {
-    fetchTodos()
+    supabase.auth.getSession().then(({data:{session}})=>{
+      if(!session){
+        router.push('/login')
+      }else{
+        fetchTodos()
+      }
+    })
   }, [])
 
   async function fetchTodos() {
@@ -47,11 +56,26 @@ export default function Home() {
     setTodos(todos.filter(t => t.id !== id))
   }
 
-  console.log(todos)
+  // console.log(todos)
+
+  async function handleLogout() {
+    await supabase.auth.signOut()
+    router.push('/login')
+  }
 
   return (
     <main className="min-h-screen bg-gray-50 py-12 px-4">
       <div className="max-w-md mx-auto">
+        <div className="flex justify-between items-center mb-6">
+          <h1 className="text-xl font-semibold text-gray-800">할 일 목록</h1>
+          <button
+            onClick={handleLogout}
+            className="text-sm text-gray-500 hover:text-gray-700"
+          >
+            로그아웃
+          </button>
+        </div>
+
         <form onSubmit={addTodo} className="flex gap-2 mb-6">
           <input type="text"
             value={title}
